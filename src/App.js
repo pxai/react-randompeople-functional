@@ -1,37 +1,56 @@
-import { Component } from 'react';
-import logo from './logo.svg';
+import  { useState, useEffect, useCallback } from 'react';
+import Person from './Person';
+import SearchForm from './SearchForm';
 import './App.css';
+import axios from 'axios';
 
-class App extends Component {
-  constructor () {
-    super();
-    this.state = {
-      people: []
-    };
+function App () {
+  const [people, setPeople] = useState([]);
+  const [gender, setGender] = useState();
+  const [country, setCountry] = useState('US');
+  
+  const findPeople =  useCallback(async () => {
+    const url = `https://randomuser.me/api/?results=10&gender=${gender}&nat=${country}`;
+    const { data: { results } } = await axios.get(url);
+    console.log("Get: ", url, gender, country)
+    setPeople(results);
+  }, [gender, country])
+
+  useEffect(() => {
+    findPeople();
+  }, [gender, country, findPeople])
+
+
+
+  const handleGender = (event) => {
+    const selectedGender = event.target.value;
+    setGender(selectedGender);
   }
 
-  componentDidMount() {
-    fetch('https://randomuser.me/api/?results=10').then(data => {
-      return data.json()
-    }).then(json => {
-      console.log('Let see: ', json.results)
-      this.setState({people: json.results})
-    })
+  const handleCountry = (event) => {
+    setCountry(event.target.value);
   }
 
-  render () {
-    return (
-      <div className="App">
-        <h1>People API</h1>
+  return (
+    <div className="App">
+      <h1>Random People</h1>
+      <div className="App-settings">
+        <div>Gender: {gender || "all"}</div>
+        <div>Country: {country}</div>
+      </div>
+      <SearchForm 
+        handleGender={handleGender} 
+        handleCountry={handleCountry}
+        country={country}
+      />
+      <button onClick={findPeople}>Search again</button>
         { 
-          this.state.people.map((person) => {
-            return <div key={person.login.uuid}>{person.name.title } {person.name.first}</div>
+          people.map((person) => {
+            return <Person key={person.login.uuid} person={person} />
           })
         }
-      </div>
-    );
-  }
-
+    </div>
+  );
 }
 
 export default App;
